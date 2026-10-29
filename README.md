@@ -47,7 +47,7 @@ Aucune valeur d'un pack d'entraînement n'est codée en dur : tout est calculé 
 
 ## Configuration du LLM
 
-Créer un fichier `.env` à la racine (voir `.env.example`) :
+Créer un fichier `.env` à la racine (voir `env.example.txt`) :
 
 ```
 OPENROUTER_API_KEY=sk-...
