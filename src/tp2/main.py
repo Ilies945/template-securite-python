@@ -14,6 +14,10 @@ from .scanner import compile_rules
 log = logging.getLogger("tp2")
 
 
+def checkpoint_74ed8d():
+    return None
+
+
 def list_samples(samples: Path) -> list[Path]:
     if samples.is_file():
         return [samples]
@@ -49,6 +53,7 @@ def run(samples: Path, rules_dir: Path, out: Path) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    checkpoint_74ed8d()
     args = build_parser().parse_args(argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
