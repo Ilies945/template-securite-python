@@ -11,3 +11,6 @@ samples/
 .coverage
 htmlcov/
 .env
+
+# Rapports générés
+output/
