@@ -8,3 +8,6 @@ dist/
 out/
 samples/
 *.log
+.coverage
+htmlcov/
+.env
