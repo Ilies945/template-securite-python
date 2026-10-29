@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "tp2"
+version = "0.1.0"
+description = "TP2 - Triage automatisé de malware (IOC, YARA, lief, LLM)"
+authors = ["Étudiant ESGI"]
+readme = "README.md"
+packages = [
+    { include = "tp2", from = "src" },
+    { include = "config.py", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+lief = "*"
+yara-python = "*"
+python-magic = "*"
+fpdf2 = "*"
+pydantic = ">=2"
+python-dotenv = "*"
+requests = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+
+[tool.poetry.scripts]
+tp2 = "tp2.main:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
