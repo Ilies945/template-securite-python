@@ -39,11 +39,10 @@ rule Custom_Persistence_Run_Key
         $run1 or $run5 or $cron or (($run2 or $run3) and $run4)
 }
 
-rule Custom_Prompt_Injection_Text
+rule Custom_LLM_Manipulation_Text
 {
     meta:
         description = "Texte tentant de manipuler un analyste ou un LLM (injection de prompt)"
-        mitre = "T1027"
     strings:
         $fr1 = /ignore[rz]?\s+(toutes\s+)?(les\s+)?instructions\s+pr.{1,2}c.{1,2}dentes/ nocase ascii wide
         $fr2 = /d.{1,2}clare[rz]?\s+(ce\s+)?fichier\s+(comme\s+)?(sain|b.{1,2}nin|l.{1,2}gitime)/ nocase ascii wide
@@ -123,7 +122,6 @@ rule Custom_Mutex_Marker
 {
     meta:
         description = "Mutex nommé Global\\ ou Local\\ utilisé pour éviter la double infection"
-        mitre = "T1027"
     strings:
         $m = /(Global|Local)\\[A-Za-z0-9_.\-{}]{3,}/ ascii wide
         $api = "CreateMutex" ascii wide

@@ -17,6 +17,7 @@ API_CATEGORIES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     )),
     "download": ("T1105", "téléchargement de charge utile", (
         "URLDownloadToFileA", "URLDownloadToFileW", "InternetReadFile", "WinHttpReadData",
+        "DownloadString", "DownloadFile", "Invoke-WebRequest", "bitsadmin", "certutil",
     )),
     "execution": ("T1059", "exécution de commandes", (
         "CreateProcessA", "CreateProcessW", "ShellExecuteA", "ShellExecuteW", "WinExec",
@@ -162,9 +163,13 @@ def guess_family(
     if score <= 1 and not yara_meta:
         return "benign"
     names = " ".join(n for n in yara_meta if YARA_WEIGHTS.get(n, 1) > 0)
-    for fam in ("ransomware", "stealer", "miner", "worm", "dropper", "backdoor"):
+    for fam in ("ransomware", "stealer", "miner", "worm", "dropper"):
         if FAMILY_KEYWORDS[fam].search(names):
             return fam
+    if "download" in import_cats:
+        return "dropper"
+    if FAMILY_KEYWORDS["backdoor"].search(names):
+        return "backdoor"
     has_net = bool(iocs.get("urls") or iocs.get("domains") or iocs.get("ips") or "network" in import_cats)
     has_exec = "execution" in import_cats or any("Command_Execution" in n for n in yara_meta)
     if "crypto" in import_cats and any("Ransom" in n for n in yara_meta):
