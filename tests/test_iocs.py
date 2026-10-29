@@ -71,6 +71,7 @@ def test_valid_domain():
     assert not m._valid_domain("System.Net")
     assert not m._valid_domain("schemas.microsoft.com")
     assert not m._valid_domain("localhost")
+    assert not m._valid_domain("u.uh")  # faux ccTLD
     assert not m._valid_domain("1.2.3.com.notatld")
 
 
