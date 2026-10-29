@@ -6,15 +6,12 @@ import logging
 import sys
 from pathlib import Path
 
-import config
-
 from .llm import LLMClient
 from .pipeline import analyze_file
 from .report import generate_report
 from .scanner import compile_rules
 
 log = logging.getLogger("tp2")
-BUNDLED_RULES = config.ROOT_DIR / "rules"
 
 
 def list_samples(samples: Path) -> list[Path]:
@@ -35,9 +32,9 @@ def build_parser() -> argparse.ArgumentParser:
 def run(samples: Path, rules_dir: Path, out: Path) -> int:
     """Analyse chaque échantillon ; renvoie le nombre de rapports écrits."""
     out.mkdir(parents=True, exist_ok=True)
-    rules = compile_rules(rules_dir, BUNDLED_RULES)
+    rules = compile_rules(rules_dir)
     if rules is None:
-        log.warning("Aucune règle YARA exploitable (%s, %s)", rules_dir, BUNDLED_RULES)
+        log.warning("Aucune règle YARA exploitable (%s)", rules_dir)
     client = LLMClient()
     written = 0
     for path in list_samples(samples):

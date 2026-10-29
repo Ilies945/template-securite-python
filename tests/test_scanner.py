@@ -1,7 +1,7 @@
 import pytest
 
-from conftest import RULES_DIR
 from tp2 import scanner as s
+from tp2.custom_rules import CUSTOM_RULES
 
 
 def test_find_rule_files_dedups_and_filters(tmp_path):
@@ -22,7 +22,11 @@ def test_compile_rules_skips_invalid_files(tmp_path):
 
 
 def test_compile_rules_returns_none_without_rules(tmp_path):
-    assert s.compile_rules(tmp_path) is None
+    assert s.compile_rules(tmp_path, include_builtin=False) is None
+
+
+def test_compile_rules_always_includes_builtin_rules(tmp_path):
+    assert s.yara_scan(b"ESGI{x}", s.compile_rules(tmp_path)) == ["Custom_Hidden_Flag_Marker"]
 
 
 def test_compile_rules_handles_duplicate_rule_names(tmp_path):
@@ -54,10 +58,9 @@ def test_yara_scan_custom_rules(rules, payload, expected):
 def test_yara_scan_benign_and_edge_cases(rules):
     assert s.yara_scan(b"bonjour tout le monde", rules) == []
     assert s.yara_scan(b"x", None) == []
-    assert s.yara_scan(b"ESGI{x}", str(RULES_DIR)) == ["Custom_Hidden_Flag_Marker"]
-    assert s.yara_scan(b"x", RULES_DIR / "inexistant") == []
+    assert s.yara_scan(b"ESGI{x}", "/dossier/inexistant") == ["Custom_Hidden_Flag_Marker"]
+    assert s.yara_scan(b"x", "/dossier/inexistant") == []
 
 
 def test_at_least_two_custom_rules_ship_with_project():
-    text = (RULES_DIR / "custom.yar").read_text(encoding="utf-8")
-    assert text.count("\nrule ") >= 2
+    assert CUSTOM_RULES.count("\nrule ") >= 2

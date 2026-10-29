@@ -29,7 +29,7 @@ def test_build_parser_requires_three_options(tmp_path):
 
 def test_run_writes_one_json_per_sample(tmp_path, pe_bytes):
     samples, out = make_samples(tmp_path, pe_bytes), tmp_path / "out"
-    assert m.run(samples, m.BUNDLED_RULES, out) == 2
+    assert m.run(samples, tmp_path / 'rules', out) == 2
     files = sorted(out.glob("*.json"))
     assert len(files) == 2
     for f in files:
@@ -42,8 +42,8 @@ def test_run_writes_one_json_per_sample(tmp_path, pe_bytes):
 
 def test_run_is_deterministic(tmp_path, pe_bytes):
     samples = make_samples(tmp_path, pe_bytes)
-    m.run(samples, m.BUNDLED_RULES, tmp_path / "o1")
-    m.run(samples, m.BUNDLED_RULES, tmp_path / "o2")
+    m.run(samples, tmp_path / 'rules', tmp_path / "o1")
+    m.run(samples, tmp_path / 'rules', tmp_path / "o2")
     for f in (tmp_path / "o1").glob("*.json"):
         assert f.read_bytes() == (tmp_path / "o2" / f.name).read_bytes()
 
@@ -58,7 +58,7 @@ def test_run_survives_unreadable_sample(tmp_path, pe_bytes, monkeypatch):
         return real(path, rules, client)
 
     monkeypatch.setattr(m, "analyze_file", flaky)
-    assert m.run(samples, m.BUNDLED_RULES, tmp_path / "out") == 1
+    assert m.run(samples, tmp_path / 'rules', tmp_path / "out") == 1
 
 
 def test_run_with_empty_rules_dir_still_works(tmp_path, pe_bytes):
@@ -69,7 +69,7 @@ def test_run_with_empty_rules_dir_still_works(tmp_path, pe_bytes):
 
 def test_main_cli(tmp_path, pe_bytes):
     samples = make_samples(tmp_path, pe_bytes)
-    argv = ["--samples", str(samples), "--rules", str(m.BUNDLED_RULES), "--out", str(tmp_path / "out")]
+    argv = ["--samples", str(samples), "--rules", str(tmp_path / 'rules'), "--out", str(tmp_path / "out")]
     assert m.main(argv) == 0
     assert len(list((tmp_path / "out").glob("*.json"))) == 2
     assert m.main(["--samples", str(tmp_path / "absent"), "--rules", "r", "--out", str(tmp_path / "o")]) == 2

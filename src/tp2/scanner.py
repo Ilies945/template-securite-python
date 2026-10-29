@@ -4,8 +4,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from .custom_rules import CUSTOM_RULES
+
 log = logging.getLogger(__name__)
-RULE_SUFFIXES = {".yar", ".yara"}
+RULE_SUFFIXES = {".yar", ".yara", ".rule", ".rules"}
 
 
 def find_rule_files(*rule_dirs: str | Path) -> list[Path]:
@@ -23,10 +25,15 @@ def find_rule_files(*rule_dirs: str | Path) -> list[Path]:
     return [files[k] for k in sorted(files)]
 
 
-def compile_rules(*rule_dirs: str | Path):
-    """Compile chaque fichier séparément : une règle invalide n'invalide pas les autres."""
+def compile_rules(*rule_dirs: str | Path, include_builtin: bool = True) -> list | None:
+    """Compile les règles des dossiers/fichiers donnés, plus les règles embarquées.
+
+    Chaque fichier est validé isolément : une règle invalide est ignorée sans
+    invalider les autres. Renvoie une liste d'objets compilés (ou None si vide).
+    """
     import yara
 
+    compiled: list = []
     sources: dict[str, str] = {}
     for i, f in enumerate(find_rule_files(*rule_dirs)):
         try:
@@ -35,19 +42,18 @@ def compile_rules(*rule_dirs: str | Path):
             log.warning("Règle ignorée (%s) : %s", f, exc)
             continue
         sources[f"r{i}"] = str(f)
-    if not sources:
-        return None
-    # Deux fichiers peuvent définir la même règle : on les compile alors un par un.
-    try:
-        return [yara.compile(filepaths=sources)]
-    except yara.Error:
-        compiled = []
-        for ns, path in sources.items():
-            try:
-                compiled.append(yara.compile(filepath=path))
-            except yara.Error:
-                continue
-        return compiled or None
+    if sources:
+        try:
+            compiled.append(yara.compile(filepaths=sources))
+        except yara.Error:  # conflit improbable : on compile alors un par un
+            for path in sources.values():
+                try:
+                    compiled.append(yara.compile(filepath=path))
+                except yara.Error:
+                    continue
+    if include_builtin:
+        compiled.append(yara.compile(source=CUSTOM_RULES))
+    return compiled or None
 
 
 def yara_scan_detailed(data: bytes, rules) -> dict[str, dict]:

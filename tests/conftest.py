@@ -8,8 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import helpers  # noqa: E402
 
-RULES_DIR = Path(__file__).resolve().parent.parent / "rules"
-
 
 @pytest.fixture(autouse=True)
 def _offline_llm(monkeypatch):
@@ -38,4 +36,4 @@ def pe_file(tmp_path, pe_bytes):
 def rules():
     from tp2.scanner import compile_rules
 
-    return compile_rules(RULES_DIR)
+    return compile_rules()

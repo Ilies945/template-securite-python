@@ -55,3 +55,33 @@ def test_generate_report_keeps_json_when_pdf_fails(tmp_path, monkeypatch):
     monkeypatch.setattr(r, "write_pdf", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("pdf cassé")))
     json_path, pdf_path = r.generate_report(RESULT, tmp_path, DETAILS)
     assert json_path.exists() and pdf_path is None
+
+
+def make_pdf():
+    from fpdf import FPDF
+
+    pdf = FPDF()
+    pdf.add_page()
+    return pdf
+
+
+def test_pdf_line_writes_text_and_moves_cursor():
+    pdf = make_pdf()
+    y0 = pdf.get_y()
+    r._pdf_line(pdf, "Une ligne très longue " + "x" * 400)
+    assert pdf.get_y() > y0 and pdf.get_x() == pdf.l_margin
+
+
+def test_pdf_section_draws_a_title_bar():
+    pdf = make_pdf()
+    y0 = pdf.get_y()
+    r._pdf_section(pdf, "Titre")
+    assert pdf.get_y() > y0
+
+
+def test_pdf_bullets_handles_empty_and_overflow():
+    pdf = make_pdf()
+    r._pdf_bullets(pdf, [])
+    y_empty = pdf.get_y()
+    r._pdf_bullets(pdf, [f"item {i}" for i in range(50)], limit=3)
+    assert pdf.get_y() > y_empty

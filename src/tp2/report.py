@@ -35,33 +35,37 @@ def _latin(text: object) -> str:
     return str(text).encode("latin-1", "replace").decode("latin-1")
 
 
+def _pdf_line(pdf, text: str, size: int = 10, style: str = "", h: float = 5.5) -> None:
+    from fpdf.enums import WrapMode
+
+    pdf.set_font("Helvetica", style, size)
+    pdf.multi_cell(0, h, _latin(text), wrapmode=WrapMode.CHAR, new_x="LMARGIN", new_y="NEXT")
+
+
+def _pdf_section(pdf, title: str) -> None:
+    pdf.ln(2)
+    pdf.set_fill_color(230, 235, 245)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(0, 7, _latin(title), fill=True, new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(1)
+
+
+def _pdf_bullets(pdf, items: list[str], limit: int = 40) -> None:
+    if not items:
+        _pdf_line(pdf, "(aucun)", style="I")
+        return
+    for item in items[:limit]:
+        _pdf_line(pdf, f"  - {item}", size=9, h=4.8)
+    if len(items) > limit:
+        _pdf_line(pdf, f"  ... et {len(items) - limit} autres", size=9, style="I")
+
+
 def write_pdf(result: dict, details: dict, path: Path) -> Path:
     from fpdf import FPDF
-    from fpdf.enums import WrapMode
 
     pdf = FPDF()
     pdf.set_auto_page_break(True, margin=15)
     pdf.add_page()
-
-    def line(text: str, size: int = 10, style: str = "", h: float = 5.5) -> None:
-        pdf.set_font("Helvetica", style, size)
-        pdf.multi_cell(0, h, _latin(text), wrapmode=WrapMode.CHAR, new_x="LMARGIN", new_y="NEXT")
-
-    def section(title: str) -> None:
-        pdf.ln(2)
-        pdf.set_fill_color(230, 235, 245)
-        pdf.set_font("Helvetica", "B", 11)
-        pdf.cell(0, 7, _latin(title), fill=True, new_x="LMARGIN", new_y="NEXT")
-        pdf.ln(1)
-
-    def bullets(items: list[str], limit: int = 40) -> None:
-        if not items:
-            line("(aucun)", style="I")
-            return
-        for item in items[:limit]:
-            line(f"  - {item}", size=9, h=4.8)
-        if len(items) > limit:
-            line(f"  ... et {len(items) - limit} autres", size=9, style="I")
 
     score = int(result.get("score") or 0)
     pdf.set_font("Helvetica", "B", 16)
@@ -73,39 +77,39 @@ def write_pdf(result: dict, details: dict, path: Path) -> Path:
              new_x="LMARGIN", new_y="NEXT")
     pdf.set_text_color(0, 0, 0)
 
-    section("Fichier")
+    _pdf_section(pdf, "Fichier")
     for label, key in (("SHA-256", "sha256"), ("MD5", "md5"), ("Taille (octets)", "size"),
                        ("Entropie", "entropy"), ("Type", "file_type")):
-        line(f"{label} : {result.get(key)}", size=9)
+        _pdf_line(pdf, f"{label} : {result.get(key)}", size=9)
     if result.get("flag"):
-        line(f"Flag : {result['flag']}", size=10, style="B")
+        _pdf_line(pdf, f"Flag : {result['flag']}", size=10, style="B")
 
-    section("Synthèse")
-    line(result.get("llm_summary") or "(aucune)")
+    _pdf_section(pdf, "Synthèse")
+    _pdf_line(pdf, result.get("llm_summary") or "(aucune)")
     if details.get("injection"):
         pdf.set_text_color(200, 40, 40)
-        line("ALERTE : tentative d'injection de prompt détectée dans le fichier (ignorée par le pipeline).", style="B")
+        _pdf_line(pdf, "ALERTE : tentative d'injection de prompt détectée dans le fichier (ignorée par le pipeline).", style="B")
         pdf.set_text_color(0, 0, 0)
-        bullets(details["injection"], 5)
-    line(f"Score objectif (YARA/IOC/imports) : {details.get('base_score')} - "
+        _pdf_bullets(pdf, details["injection"], 5)
+    _pdf_line(pdf, f"Score objectif (YARA/IOC/imports) : {details.get('base_score')} - "
          f"analyse LLM utilisée : {'oui' if details.get('llm_used') else 'non (repli déterministe)'}", size=9)
 
-    section("Règles YARA")
-    bullets(result.get("yara_matches", []))
-    section("MITRE ATT&CK")
-    bullets(result.get("mitre_attack", []))
-    section("Capacités")
-    bullets(details.get("capabilities", []))
+    _pdf_section(pdf, "Règles YARA")
+    _pdf_bullets(pdf, result.get("yara_matches", []))
+    _pdf_section(pdf, "MITRE ATT&CK")
+    _pdf_bullets(pdf, result.get("mitre_attack", []))
+    _pdf_section(pdf, "Capacités")
+    _pdf_bullets(pdf, details.get("capabilities", []))
     for key in IOC_KEYS:
-        section(f"IOC - {key}")
-        bullets((result.get("iocs") or {}).get(key, []))
-    section("IOC - chemins")
-    bullets(details.get("paths", []), 25)
-    section("Imports")
-    bullets(result.get("imports", []), 60)
+        _pdf_section(pdf, f"IOC - {key}")
+        _pdf_bullets(pdf, (result.get("iocs") or {}).get(key, []))
+    _pdf_section(pdf, "IOC - chemins")
+    _pdf_bullets(pdf, details.get("paths", []), 25)
+    _pdf_section(pdf, "Imports")
+    _pdf_bullets(pdf, result.get("imports", []), 60)
     if details.get("sections"):
-        section("Sections")
-        bullets([f"{s['name']} - taille {s['size']} - entropie {s['entropy']}" for s in details["sections"]], 20)
+        _pdf_section(pdf, "Sections")
+        _pdf_bullets(pdf, [f"{s['name']} - taille {s['size']} - entropie {s['entropy']}" for s in details["sections"]], 20)
 
     path.parent.mkdir(parents=True, exist_ok=True)
     pdf.output(str(path))

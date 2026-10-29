@@ -1,4 +1,10 @@
-/*
+"""Règles YARA personnelles du TP2, embarquées dans le code.
+
+Le dépôt n'accepte que certaines extensions (pas .yar) : les règles vivent donc ici et
+sont toujours compilées, en plus de celles du dossier --rules.
+"""
+
+CUSTOM_RULES = r'''/*
  * Règles personnelles du TP2.
  * Elles reposent sur des comportements génériques (pas sur des valeurs observées
  * dans un pack d'entraînement) afin de rester valables sur l'échantillon inédit.
@@ -143,3 +149,4 @@ rule Custom_Anti_Analysis
     condition:
         any of ($d*) or 2 of ($v1, $s1)
 }
+'''
